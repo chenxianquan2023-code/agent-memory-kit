@@ -1,0 +1,19 @@
+# Core dependencies (required)
+numpy>=1.21.0
+networkx>=2.6.0
+
+# Optional dependencies for advanced features
+
+# Vector operations (optional but recommended)
+# scikit-learn>=1.0.0  # For clustering
+
+# Graph community detection (optional)
+# python-louvain>=0.15  # For community detection in graphs
+
+# Real embeddings (optional, for production use)
+# sentence-transformers>=2.0.0  # For semantic embeddings
+
+# Development dependencies (install with: pip install -e ".[dev]")
+# pytest>=7.0
+# black>=22.0
+# mypy>=0.950

@@ -1,13 +1,16 @@
 """
-Core memory management with HOT/WARM/COLD layers.
+Core memory management with HOT/WARM/COLD layers + Vector + Graph.
 """
 
 import json
 import hashlib
 from pathlib import Path
 from datetime import datetime, timedelta
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 from dataclasses import dataclass, asdict
+
+from .vector_store import VectorMemory
+from .graph_store import MemoryGraph
 
 
 @dataclass
@@ -17,15 +20,23 @@ class MemoryConfig:
     warm_max_lines: int = 500
     cold_compression_days: int = 7
     validation_sample_rate: float = 0.1
+    enable_vector: bool = True
+    enable_graph: bool = True
+    embedding_dim: int = 384
 
 
 class MemoryManager:
     """
-    Three-layer memory system for AI agents.
+    Advanced memory system for AI agents.
     
-    HOT: Current session, always loaded
-    WARM: Active preferences, loaded on demand
-    COLD: Archived history, indexed retrieval
+    Layers:
+    - HOT: Current session, always loaded
+    - WARM: Active preferences, loaded on demand
+    - COLD: Archived history, indexed retrieval
+    
+    Extensions:
+    - Vector: Semantic search with embeddings
+    - Graph: Entity-relationship knowledge graph
     """
     
     def __init__(self, workspace: str, config: Optional[MemoryConfig] = None):
@@ -43,6 +54,16 @@ class MemoryManager:
         # In-memory cache for HOT layer
         self._hot_cache: Dict[str, Any] = {}
         self._warm_cache: Dict[str, Any] = {}
+        
+        # Initialize extensions
+        self._vector: Optional[VectorMemory] = None
+        self._graph: Optional[MemoryGraph] = None
+        
+        if self.config.enable_vector:
+            self._vector = VectorMemory(workspace, self.config.embedding_dim)
+        
+        if self.config.enable_graph:
+            self._graph = MemoryGraph(workspace)
         
         # Load HOT layer on init
         self._load_hot()
@@ -169,3 +190,65 @@ class MemoryManager:
             if file_path.is_file():
                 total += file_path.stat().st_size
         return round(total / (1024 * 1024), 2)
+
+    # ========== Vector Memory Extension ==========
+
+    @property
+    def vector(self) -> VectorMemory:
+        """Access vector memory store."""
+        if self._vector is None:
+            raise RuntimeError("Vector memory not enabled. Set enable_vector=True in config.")
+        return self._vector
+
+    def vector_search(self, query: str, top_k: int = 5) -> List[Dict]:
+        """
+        Semantic search using vector embeddings.
+
+        Args:
+            query: Search query text
+            top_k: Number of results
+
+        Returns:
+            List of matching memories with similarity scores
+        """
+        return self.vector.search(query, top_k=top_k)
+
+    def add_vector_memory(self, text: str, metadata: Optional[Dict] = None) -> str:
+        """
+        Add a memory with vector embedding.
+
+        Args:
+            text: Text content to store
+            metadata: Additional metadata
+
+        Returns:
+            Entry ID
+        """
+        return self.vector.add(text, metadata=metadata)
+
+    # ========== Graph Memory Extension ==========
+
+    @property
+    def graph(self) -> MemoryGraph:
+        """Access knowledge graph store."""
+        if self._graph is None:
+            raise RuntimeError("Graph memory not enabled. Set enable_graph=True in config.")
+        return self._graph
+
+    def add_entity(self, entity_id: str, entity_type: str, name: str,
+                   properties: Optional[Dict] = None):
+        """Add an entity to knowledge graph."""
+        return self.graph.add_entity(entity_id, entity_type, name, properties)
+
+    def add_relation(self, source: str, target: str, relation_type: str,
+                     properties: Optional[Dict] = None):
+        """Add a relation between entities."""
+        return self.graph.add_relation(source, target, relation_type, properties)
+
+    def find_path(self, source: str, target: str, max_depth: int = 3) -> Optional[List[Dict]]:
+        """Find connection path between two entities."""
+        return self.graph.find_path(source, target, max_depth)
+
+    def get_related(self, entity_id: str, depth: int = 1) -> List[Dict]:
+        """Get related entities from graph."""
+        return self.graph.get_neighbors(entity_id, depth=depth)

@@ -27,14 +27,19 @@ setup(
     ],
     python_requires=">=3.8",
     install_requires=[
-        # No external dependencies for core functionality
-        # Keeping it lightweight
+        "numpy>=1.21.0",
+        "networkx>=2.6.0",
     ],
     extras_require={
         "dev": [
             "pytest>=7.0",
             "black>=22.0",
             "mypy>=0.950",
+        ],
+        "full": [
+            "scikit-learn>=1.0.0",
+            "python-louvain>=0.15",
+            "sentence-transformers>=2.0.0",
         ],
     },
 )
