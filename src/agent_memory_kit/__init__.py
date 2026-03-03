@@ -10,6 +10,12 @@ from .validator import ReplayValidator, ValidationResult
 from .vector_store import VectorMemory, VectorEntry
 from .graph_store import MemoryGraph, Entity, Relation
 
+try:
+    from .web.dashboard import MemoryDashboard, launch_dashboard
+    HAS_DASHBOARD = True
+except ImportError:
+    HAS_DASHBOARD = False
+
 __all__ = [
     "MemoryManager",
     "MemoryConfig",
@@ -23,3 +29,6 @@ __all__ = [
     "Entity",
     "Relation",
 ]
+
+if HAS_DASHBOARD:
+    __all__.extend(["MemoryDashboard", "launch_dashboard"])
